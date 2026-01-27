@@ -1,0 +1,10 @@
+{
+  "name": "rs-bind",
+  "scripts": {
+    "test": "vitest",
+    "example": "nodemon --watch example.js example.js"
+  },
+  "dependencies": {
+    "vitest": "^4.0.18"
+  }
+}
