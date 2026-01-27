@@ -2,9 +2,10 @@
   "name": "rs-bind",
   "scripts": {
     "test": "vitest",
-    "example": "nodemon --watch example.js example.js"
+    "example": "nodemon --watch main.js --watch example.js example.js"
   },
-  "dependencies": {
+  "devDependencies": {
+    "express": "^5.2.1",
     "vitest": "^4.0.18"
   }
 }
