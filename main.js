@@ -42,7 +42,7 @@ const mod = {
 				const stats = fs.statSync(_path);
 				return Object.assign(coll, {
 					[stats.isFile() ? item : `${ item }/`]: {
-						ETag: stats.birthtime.toJSON().replace(/\D/g, ''),
+						ETag: stats.mtime.toJSON().replace(/\D/g, ''),
 						'Content-Length': stats.size,
 						'Content-Type': mime.getType(_path) || 'application/json',
 					},
