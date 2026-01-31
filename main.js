@@ -8,13 +8,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const prefix = '/storage';
+const _storage = path.join(__dirname, '__storage');
+
 const mod = {
 
 	etag: target => fs.statSync(target).mtime.toJSON().replace(/\D/g, ''),
 
 	handle (req, res, next) {
 		const isFolder = req.url.endsWith('/');
-		const target = path.join(__dirname, '__storage', req.url.split(prefix).slice(1).join(prefix));
+		const _url = req.url.split(new RegExp(`^\\${ prefix }`)).pop();
+		const target = path.join(_storage, _url);
 
 		if (req.url.toLowerCase().match('/.well-known/webfinger'))
 			return res.json({
@@ -39,8 +42,17 @@ const mod = {
 				'Access-Control-Allow-Headers': 'Authorization, Content-Length, Content-Type, If-Match, If-None-Match, Origin, X-Requested-With',				
 			}).status(204).end();
 
-		if (req.method === 'PUT' && fs.existsSync(target) && !isFolder && fs.statSync(target).isDirectory())
+		if (req.method === 'PUT' && fs.existsSync(target) && fs.statSync(target).isDirectory())
 			return res.status(409).send('Conflict');
+
+		if (req.method === 'PUT' && !fs.existsSync(target))
+			if (_url.split('/').reduce((coll, item) => {
+				return coll.concat(`${ coll.at(-1) || '' }/${ item }`);
+			}, []).filter(url => {
+				const _path = path.join(_storage, url);
+				return fs.existsSync(_path) && fs.statSync(_path).isFile();
+			}).length)
+				return res.status(409).send('Conflict');
 
 		if (['PUT', 'DELETE'].includes(req.method) && (
 			!fs.existsSync(target) && req.headers['if-match']
@@ -58,6 +70,7 @@ const mod = {
 
 		if (req.method === 'PUT') {
 			const folder = path.dirname(target);
+
 			fs.mkdirSync(folder, { recursive: true });
 			utimesSync(folder, { mtime: Date.now() });
 			fs.writeFileSync(target, JSON.stringify(req.body));
