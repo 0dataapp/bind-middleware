@@ -74,6 +74,11 @@ const mod = {
 			ETag: etag,
 		}).status(200);
 
+		if (req.method === 'HEAD')
+			return res.set({
+				'Content-Length': fs.statSync(target).size,
+			}).end();
+
 		if (!isFolder)
 			return res.json(JSON.parse(fs.readFileSync(target, 'utf8')));
 
