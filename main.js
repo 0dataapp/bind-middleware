@@ -44,7 +44,7 @@ const mod = {
 			|| fs.existsSync(target) && req.headers['if-match'] && req.headers['if-match'] !== mod.etag(target)
 			|| fs.existsSync(target) && req.headers['if-none-match']
 			))
-			return res.status(412).send('Conflict');
+			return res.status(412).send('Precondition failed');
 
 		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !fs.existsSync(target))
 			return res.status(404).send('Not found');
