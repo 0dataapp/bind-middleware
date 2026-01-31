@@ -39,19 +39,19 @@ const mod = {
 				'Access-Control-Allow-Headers': 'Authorization, Content-Length, Content-Type, If-Match, If-None-Match, Origin, X-Requested-With',				
 			}).status(204).end();
 
+		if (['PUT', 'DELETE'].includes(req.method) && (
+			!fs.existsSync(target) && req.headers['if-match']
+			|| fs.existsSync(target) && req.headers['if-match'] && req.headers['if-match'] !== mod.etag(target)
+			|| fs.existsSync(target) && req.headers['if-none-match']
+			))
+			return res.status(412).send('Conflict');
+
 		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !fs.existsSync(target))
 			return res.status(404).send('Not found');
 
 		if (req.method === 'GET' && fs.existsSync(target) && req.headers['if-none-match'])
 			if (req.headers['if-none-match'].split(',').map(e => e.trim()).includes(mod.etag(target)))
 				return res.status(304).send('Not Modified');
-
-		if (req.method === 'PUT' && (
-			!fs.existsSync(target) && req.headers['if-match']
-			|| fs.existsSync(target) && req.headers['if-match'] && req.headers['if-match'] !== mod.etag(target)
-			|| fs.existsSync(target) && req.headers['if-none-match']
-			))
-			return res.status(412).send('Conflict');
 
 		if (req.method === 'PUT') {
 			const folder = path.dirname(target);
