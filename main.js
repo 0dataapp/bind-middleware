@@ -33,12 +33,12 @@ const mod = {
 			});
 
 		if (!req.headers.authorization)
-			return res.status(401).send('Unauthorized');
+			return res.status(401).end();
 
 		res.set({
 			'Access-Control-Allow-Origin': req.headers['origin'] || '*',
 			'Access-Control-Expose-Headers': 'Content-Length, Content-Type, ETag',	
-		})
+		});
 
 		if (req.method === 'OPTIONS')
 			return res.set({
@@ -47,14 +47,14 @@ const mod = {
 			}).status(204).end();
 
 		if (req.method === 'PUT' && req.headers['content-range'])
-				return res.status(400).send('Invalid request, Content-Range in PUT');
+				return res.status(400).end();
 
 		if (req.method === 'PUT' && fs.existsSync(target) && fs.statSync(target).isDirectory())
-			return res.status(409).send('Conflict');
+			return res.status(409).end();
 
 		if (req.method === 'PUT' && !fs.existsSync(target))
 			if (_folders.filter(e => fs.existsSync(e) && fs.statSync(e).isFile()).length)
-				return res.status(409).send('Conflict');
+				return res.status(409).end();
 
 		const meta = fs.existsSync(target) ? JSON.parse(fs.readFileSync(mod.metaPath(target), 'utf8')) : {};
 
@@ -63,14 +63,14 @@ const mod = {
 			|| fs.existsSync(target) && req.headers['if-match'] && req.headers['if-match'] !== meta.ETag
 			|| fs.existsSync(target) && req.headers['if-none-match']
 			))
-			return res.status(412).send('Precondition failed');
+			return res.status(412).end();
 
 		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !fs.existsSync(target))
 			return res.status(404).send('Not found');
 
 		if (req.method === 'GET' && fs.existsSync(target) && req.headers['if-none-match'])
 			if (req.headers['if-none-match'].split(',').map(e => e.trim()).includes(meta.ETag))
-				return res.status(304).send('Not Modified');
+				return res.status(304).end();
 
 		if (req.method === 'PUT') {
 			const folder = `${ path.dirname(target) }${ path.sep }`;
