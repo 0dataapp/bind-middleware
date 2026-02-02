@@ -61,6 +61,8 @@ const mod = {
 		ETag: mod.etag(),
 	}))),
 
+	deleteChild: target => fs.unlinkSync(mod.metaPath(target)),
+
 };
 
 export default mod;

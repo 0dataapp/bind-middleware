@@ -117,7 +117,7 @@ const mod = {
 			return res.end();
 
 		if (req.method === 'DELETE') {
-			fs.unlinkSync(mod.metaPath(target));
+			await adapter.deleteChild(target);
 			fs.unlinkSync(target);
 
 			_folders.filter(e => !fs.readdirSync(e).filter(e => !mod.isMetaPath(e)).length).forEach(e => {
