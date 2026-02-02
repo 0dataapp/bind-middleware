@@ -51,7 +51,7 @@ const mod = {
 				return res.status(400).end();
 
 		const target = adapter.dataPath(handle, _url);
-
+		
 		if (req.method === 'PUT' && fs.existsSync(target) && fs.statSync(target).isDirectory())
 			return res.status(409).end();
 
@@ -96,7 +96,7 @@ const mod = {
 
 		if (req.method === 'DELETE') {
 			fs.unlinkSync(target);
-
+			
 			await adapter.delete(target, _folders);
 
 			return res.end();
@@ -105,7 +105,7 @@ const mod = {
 		return isFolderRequest ? res.json({
 			'@context': 'http://remotestorage.io/spec/folder-description',
 			items: await adapter.folderItems(handle, _url),
-		}) : res.send(meta['Content-Type'] === 'application/json' ? fs.readFileSync(target, 'utf8') : fs.readFileSync(target));
+		}) : res.send(fs.readFileSync(target, meta['Content-Type'] === 'application/json' ? 'utf8' : undefined));
 	},
 
 };
