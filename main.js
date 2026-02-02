@@ -98,8 +98,7 @@ const mod = {
 			await adapter.putParents(_folders);
 
 			fs.writeFileSync(target, req.headers['content-type'] === 'application/json' ? JSON.stringify(req.body) : req.body);
-			fs.writeFileSync(mod.metaPath(target), JSON.stringify({
-				ETag: meta.ETag = new Date().toJSON(),
+			await adapter.putChild(target, Object.assign(meta, {
 				'Content-Type': req.headers['content-type'],
 				'Content-Length': Buffer.isBuffer(req.body) ? req.body.length : fs.statSync(target).size,
 			}));
@@ -142,7 +141,7 @@ const mod = {
 			'@context': 'http://remotestorage.io/spec/folder-description',
 			items: fs.readdirSync(target).filter(e => !mod.isMetaPath(e) && !mod.isIgnorePath(e)).reduce((coll, item) => {
 				let _path = path.join(target, item);
-				
+
 				if (fs.statSync(_path).isDirectory()) {
 					item = `${ item }/`;
 					_path = `${ _path }/`;

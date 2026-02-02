@@ -51,8 +51,14 @@ const mod = {
 	
 	meta: target => fs.existsSync(target) ? JSON.parse(fs.readFileSync(mod.metaPath(target), 'utf8')) : {},
 
+	etag: () => new Date().toJSON(),
+
 	putParents: _folders => _folders.forEach(e => fs.writeFileSync(mod.metaPath(`${ e }/`), JSON.stringify({
-		ETag: new Date().toJSON(),
+		ETag: mod.etag(),
+	}))),
+
+	putChild: (target, meta) => fs.writeFileSync(mod.metaPath(target), JSON.stringify(Object.assign(meta, {
+		ETag: mod.etag(),
 	}))),
 
 };
