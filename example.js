@@ -1,5 +1,6 @@
-const express = require('express');
-const main = require('./main.js');
+import express from 'express';
+import main from './main.js';
+import adapter from './adapter.js';
 
 const port = process.env.PORT || 3000;
 express()
@@ -8,5 +9,5 @@ express()
     limit: '1mb',
     type: '*/*',
   }))
-  .use(main.default.handle)
+  .use(main.handler(adapter))
   .listen(port, () => console.info(`> Running on port ` + port));
