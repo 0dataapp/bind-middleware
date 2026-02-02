@@ -43,6 +43,8 @@ const mod = {
 	  return output;
 	},
 
+	dataPath: (handle, url) => mod._resolvePath(handle, path.join('data', url)),
+
 };
 
 export default mod;

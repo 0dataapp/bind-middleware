@@ -21,8 +21,7 @@ const mod = {
 	_parseToken: e => (!e || !e.trim()) ? null : e.split('Bearer ').pop(),
 
 	_resolvePath: (handle, url) => path.join(__dirname, '__storage', handle, url),
-	_dataPath: (handle, url) => mod._resolvePath(handle, path.join('data', url)),
-
+	
 	handler: adapter => (req, res, next) => {
 		if (req.url.toLowerCase().match('/.well-known/webfinger'))
 			return res.json({
@@ -67,8 +66,8 @@ const mod = {
 
 		const _folders = _url.split('/').slice(0, -1).reduce((coll, item) => {
 			return coll.concat(`${ coll.at(-1) || '' }/${ item }`);
-		}, []).map(e => mod._dataPath(handle, e));
-		const target = mod._dataPath(handle, _url);
+		}, []).map(e => adapter.dataPath(handle, e));
+		const target = adapter.dataPath(handle, _url);
 
 		if (req.method === 'PUT' && fs.existsSync(target) && fs.statSync(target).isDirectory())
 			return res.status(409).end();
