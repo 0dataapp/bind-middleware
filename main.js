@@ -95,15 +95,14 @@ const mod = {
 		if (req.method === 'PUT') {
 			const folder = `${ path.dirname(target) }${ path.sep }`;
 			fs.mkdirSync(folder, { recursive: true });
-			_folders.forEach(e => fs.writeFileSync(mod.metaPath(`${ e }/`), JSON.stringify(Object.assign(meta, {
-				ETag: new Date().toJSON(),
-			}))));
+			await adapter.putParents(_folders);
 
 			fs.writeFileSync(target, req.headers['content-type'] === 'application/json' ? JSON.stringify(req.body) : req.body);
-			fs.writeFileSync(mod.metaPath(target), JSON.stringify(Object.assign(meta, {
+			fs.writeFileSync(mod.metaPath(target), JSON.stringify({
+				ETag: meta.ETag = new Date().toJSON(),
 				'Content-Type': req.headers['content-type'],
 				'Content-Length': Buffer.isBuffer(req.body) ? req.body.length : fs.statSync(target).size,
-			})));
+			}));
 		}
 
 		res.set(meta).status(200);

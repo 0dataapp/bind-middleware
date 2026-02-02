@@ -51,6 +51,10 @@ const mod = {
 	
 	meta: target => fs.existsSync(target) ? JSON.parse(fs.readFileSync(mod.metaPath(target), 'utf8')) : {},
 
+	putParents: _folders => _folders.forEach(e => fs.writeFileSync(mod.metaPath(`${ e }/`), JSON.stringify({
+		ETag: new Date().toJSON(),
+	}))),
+
 };
 
 export default mod;
