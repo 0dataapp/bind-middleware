@@ -23,8 +23,12 @@ const mod = {
 		if (!publicFolder && !token)
 			return res.status(401).end();
 
-		const permission = await adapter.permission(handle, token);
+		const isFolderRequest = req.url.endsWith('/');
 
+		if (publicFolder && isFolderRequest)
+			return res.status(401).end();
+
+		const permission = await adapter.permission(handle, token);
 
 		if (!publicFolder && !permission)
 			return res.status(401).end();
@@ -84,8 +88,6 @@ const mod = {
 			await adapter.put(handle, _url, req.body, _folders, Object.assign(meta, {
 				'Content-Type': req.headers['content-type'],
 			}));
-
-		const isFolderRequest = req.url.endsWith('/');
 
 		if (isFolderRequest)
 			meta['Content-Type'] = 'application/ld+json';
