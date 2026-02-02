@@ -48,6 +48,7 @@ const mod = {
 	dataPath: (handle, url) => mod._resolvePath(handle, path.join('data', url)),
 
 	metaPath: target => `${ target }${ metaSuffix }`,
+	isMetaPath: e => e.endsWith(metaSuffix),
 	
 	meta: target => fs.existsSync(target) ? JSON.parse(fs.readFileSync(mod.metaPath(target), 'utf8')) : {},
 
@@ -56,12 +57,21 @@ const mod = {
 	putParents: _folders => _folders.forEach(e => fs.writeFileSync(mod.metaPath(`${ e }/`), JSON.stringify({
 		ETag: mod.etag(),
 	}))),
-
 	putChild: (target, meta) => fs.writeFileSync(mod.metaPath(target), JSON.stringify(Object.assign(meta, {
 		ETag: mod.etag(),
 	}))),
 
 	deleteChild: target => fs.unlinkSync(mod.metaPath(target)),
+	deleteParents: _folders => {
+		_folders.filter(e => !fs.readdirSync(e).filter(e => !mod.isMetaPath(e)).length).forEach(e => {
+			fs.unlinkSync(mod.metaPath(`${e}/`));
+			fs.rmdirSync(e);
+		});
+
+		_folders.filter(e => fs.existsSync(e) && fs.readdirSync(e).filter(e => !mod.isMetaPath(e)).length).forEach(e => fs.writeFileSync(mod.metaPath(`${ e }/`), JSON.stringify({
+			ETag: mod.etag(),
+		})));
+	},
 
 };
 

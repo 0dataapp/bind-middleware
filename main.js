@@ -120,16 +120,7 @@ const mod = {
 			await adapter.deleteChild(target);
 			fs.unlinkSync(target);
 
-			_folders.filter(e => !fs.readdirSync(e).filter(e => !mod.isMetaPath(e)).length).forEach(e => {
-				fs.unlinkSync(mod.metaPath(`${e}/`));
-				fs.rmdirSync(e);
-			});
-
-			// Object.keys(meta).forEach(e => delete meta[e]);
-
-			_folders.filter(e => fs.existsSync(e) && fs.readdirSync(e).filter(e => !mod.isMetaPath(e)).length).forEach(e => fs.writeFileSync(mod.metaPath(`${ e }/`), JSON.stringify({
-				ETag: new Date().toJSON(),
-			})));
+			await adapter.deleteParents(_folders);
 
 			return res.end();
 		}
