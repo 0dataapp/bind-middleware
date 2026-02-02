@@ -22,7 +22,7 @@ const mod = {
 
 	_resolvePath: (handle, url) => path.join(__dirname, '__storage', handle, url),
 	
-	handler: adapter => (req, res, next) => {
+	handler: adapter => async (req, res, next) => {
 		if (req.url.toLowerCase().match('/.well-known/webfinger'))
 			return res.json({
 				links: [{
@@ -38,7 +38,7 @@ const mod = {
 		if (!token)
 			return res.status(401).end();
 
-		const permissions = adapter.permissions(handle, token);
+		const permissions = await adapter.permissions(handle, token);
 
 		if (!permissions)
 			return res.status(401).end();
