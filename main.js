@@ -12,12 +12,12 @@ const mod = {
 			return res.json({
 				links: [{
 					rel: 'remotestorage',
-					href: `${ req.protocol }://${ req.get('host') }/me/${ prefix }`,
+					href: `${ req.protocol }://${ req.get('host') }/${ prefix }/me`,
 					type: 'draft-dejong-remotestorage-02',
 				}],
 			});
 
-		const [handle, _url] = req.url.match(new RegExp(`^\\/(\\w+)\\/${ prefix }(.*)`)).slice(1);
+		const [handle, _url] = req.url.match(new RegExp(`^\\/${ prefix }\\/(\\w+)(.*)`)).slice(1);
 		const token = mod._parseToken(req.headers.authorization);
 
 		if (!token)
