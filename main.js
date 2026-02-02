@@ -5,8 +5,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const prefix = '/storage';
-const _storage = path.join(__dirname, '__storage');
+const prefix = 'storage';
 
 const metaSuffix = '.meta.json';
 
@@ -19,24 +18,71 @@ const mod = {
 		'.DS_Store',
 	].includes(path.basename(e)),
 
-	handle (req, res, next) {
-		const isFolder = req.url.endsWith('/');
-		const _url = req.url.split(new RegExp(`^\\${ prefix }`)).pop();
-		const _folders = _url.split('/').slice(0, -1).reduce((coll, item) => {
-			return coll.concat(`${ coll.at(-1) || '' }/${ item }`);
-		}, []).map(e => path.join(_storage, e));
-		const target = path.join(_storage, _url);
+	_parseToken: e => (!e || !e.trim()) ? null : e.split('Bearer ').pop(),
 
+	_resolvePath: (handle, url) => path.join(__dirname, '__storage', handle, url),
+	_dataPath: (handle, url) => mod._resolvePath(handle, path.join('data', url)),
+
+	_readJson (path) {
+    try {
+      const content = fs.readFileSync(path);
+      return content ? JSON.parse(content) : null;
+    } catch (e) {
+      if (e.code !== 'ENOENT')
+      	console.error('reading JSON failed:', e);
+
+      return null;
+    }
+  },
+
+  _access (handle, token) {
+	  const user = mod._readJson(mod._resolvePath(handle, 'auth.json'));
+	  if (!user)
+	  	return {};
+
+	  const data = user.sessions;
+	  if (!data || !data[token])
+	  	return {};
+
+	  const permissions = data[token].permissions;
+	  if (!permissions)
+	  	return {};
+	  
+	  const output = {};
+
+	  for (const category in permissions) {
+	    output[category] = Object.keys(permissions[category]).sort();
+	  }
+
+	  return output;
+	},
+
+	handle (req, res, next) {
 		if (req.url.toLowerCase().match('/.well-known/webfinger'))
 			return res.json({
 				links: [{
 					rel: 'remotestorage',
-					href: req.protocol + '://' + req.get('host') + prefix,
+					href: `${ req.protocol }://${ req.get('host') }/me/${ prefix }`,
 					type: 'draft-dejong-remotestorage-02',
 				}],
 			});
 
-		if (!req.headers.authorization)
+		const [handle, _url] = req.url.match(new RegExp(`^\\/(\\w+)\\/${ prefix }(.*)`)).slice(1);
+		const token = mod._parseToken(req.headers.authorization);
+
+		if (!token)
+			return res.status(401).end();
+
+		const permissions = mod._access(handle, token);
+
+		if (!permissions)
+			return res.status(401).end();
+
+		const scope = _url.match(/^\/[^\/]+\//).shift()
+		// if (!Object.keys(permissions).includes(`/${ scope }/`))
+		// 	return res.status(401).end();
+
+		if (['PUT', 'DELETE'].includes(req.method) && !permissions[scope].includes('w'))
 			return res.status(401).end();
 
 		res.set({
@@ -52,6 +98,11 @@ const mod = {
 
 		if (req.method === 'PUT' && req.headers['content-range'])
 				return res.status(400).end();
+
+		const _folders = _url.split('/').slice(0, -1).reduce((coll, item) => {
+			return coll.concat(`${ coll.at(-1) || '' }/${ item }`);
+		}, []).map(e => mod._dataPath(handle, e));
+		const target = mod._dataPath(handle, _url);
 
 		if (req.method === 'PUT' && fs.existsSync(target) && fs.statSync(target).isDirectory())
 			return res.status(409).end();
@@ -91,6 +142,8 @@ const mod = {
 		}
 
 		res.set(meta).status(200);
+
+		const isFolder = req.url.endsWith('/');
 
 		if (isFolder)
 			res.set({
