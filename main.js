@@ -8,6 +8,7 @@ const mod = {
 	_parseToken: e => (!e || !e.trim()) ? null : e.split('Bearer ').pop(),
 
 	handler: adapter => async (req, res, next) => {
+		// console.info(req.method, req.url);
 		if (req.url.toLowerCase().match('/.well-known/webfinger'))
 			return res.json({
 				links: [{
@@ -49,19 +50,20 @@ const mod = {
 		if (req.method === 'PUT' && req.headers['content-range'])
 				return res.status(400).end();
 
-		const _folders = _url.split('/').slice(0, -1).reduce((coll, item) => {
-			return coll.concat(`${ coll.at(-1) || '' }/${ item }`);
-		}, []).map(e => adapter.dataPath(handle, e));
 		const target = adapter.dataPath(handle, _url);
 
 		if (req.method === 'PUT' && fs.existsSync(target) && fs.statSync(target).isDirectory())
 			return res.status(409).end();
 
+		const _folders = _url.split('/').slice(0, -1).reduce((coll, item) => {
+			return coll.concat(`${ coll.at(-1) || '' }/${ item }`);
+		}, []).map(e => adapter.dataPath(handle, e));
+		
 		if (req.method === 'PUT' && !fs.existsSync(target))
 			if (_folders.filter(e => fs.existsSync(e) && fs.statSync(e).isFile()).length)
 				return res.status(409).end();
 
-		const meta = await adapter.meta(target);
+		const meta = await adapter.meta(handle, _url);
 
 		if (['PUT', 'DELETE'].includes(req.method) && (
 			!fs.existsSync(target) && req.headers['if-match']

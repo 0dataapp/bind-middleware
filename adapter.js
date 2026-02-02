@@ -52,7 +52,10 @@ const mod = {
 		'.DS_Store',
 	].includes(path.basename(e)),
 
-	meta: target => fs.existsSync(target) ? JSON.parse(fs.readFileSync(mod.metaPath(target), 'utf8')) : {},
+	meta: (handle, _url) => {
+		const target = mod.dataPath(handle, _url);
+		return fs.existsSync(target) ? JSON.parse(fs.readFileSync(mod.metaPath(target), 'utf8')) : {}
+	},
 
 	etag: () => new Date().toJSON(),
 
