@@ -29,7 +29,7 @@ const mod = {
 		if (!permissions)
 			return res.status(401).end();
 
-		const scope = `/${ _url.match(/^\/([^\/]+)/).pop() }/`;
+		const scope = _url === '/' ? '/*/' : `/${ _url.match(/^\/([^\/]+)/).pop() }/`;
 
 		if (!Object.keys(permissions).includes(scope))
 			return res.status(401).end();
