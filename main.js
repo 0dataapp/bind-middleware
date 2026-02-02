@@ -80,7 +80,7 @@ const mod = {
 				return res.status(304).end();
 
 		if (req.method === 'PUT')
-			await adapter.put(target, req.body, _folders, Object.assign(meta, {
+			await adapter.put(handle, _url, req.body, _folders, Object.assign(meta, {
 				'Content-Type': req.headers['content-type'],
 			}));
 

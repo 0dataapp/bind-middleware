@@ -59,7 +59,9 @@ const mod = {
 
 	etag: () => new Date().toJSON(),
 
-	put (target, data, _folders, meta) {
+	put (handle, _url, data, _folders, meta) {
+		const target = mod.dataPath(handle, _url);
+
 		fs.mkdirSync(path.dirname(target), { recursive: true });
 		_folders.forEach(e => fs.writeFileSync(mod.metaPath(`${ e }/`), JSON.stringify({
 			ETag: mod.etag(),
