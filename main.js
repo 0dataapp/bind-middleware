@@ -13,7 +13,7 @@ const mod = {
 				links: [{
 					rel: 'remotestorage',
 					href: `${ req.protocol }://${ req.get('host') }/${ prefix }/me`,
-					type: 'draft-dejong-remotestorage-06',
+					type: 'draft-dejong-remotestorage-07',
 				}],
 			});
 
