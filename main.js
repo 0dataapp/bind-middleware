@@ -60,12 +60,12 @@ const mod = {
 		if (req.method === 'PUT' && fs.existsSync(target) && fs.statSync(target).isDirectory())
 			return res.status(409).end();
 
-		const _folders = _url.split('/').slice(0, -1).reduce((coll, item) => {
+		const ancestors = _url.split('/').slice(0, -1).reduce((coll, item) => {
 			return coll.concat(`${ coll.at(-1) || '' }/${ item }`);
 		}, []).map(e => adapter.dataPath(handle, e));
 		
 		if (req.method === 'PUT' && !fs.existsSync(target))
-			if (_folders.filter(e => fs.existsSync(e) && fs.statSync(e).isFile()).length)
+			if (ancestors.filter(e => fs.existsSync(e) && fs.statSync(e).isFile()).length)
 				return res.status(409).end();
 
 		const meta = await adapter.meta(handle, _url);
@@ -85,12 +85,12 @@ const mod = {
 				return res.status(304).end();
 
 		if (req.method === 'PUT')
-			await adapter.put(handle, _url, req.body, _folders, Object.assign(meta, {
+			await adapter.put(handle, _url, req.body, ancestors, Object.assign(meta, {
 				'Content-Type': req.headers['content-type'],
 			}));
 
 		if (req.method === 'DELETE')
-			await adapter.delete(target, _folders);
+			await adapter.delete(target, ancestors);
 
 		if (isFolderRequest)
 			meta['Content-Type'] = 'application/ld+json';

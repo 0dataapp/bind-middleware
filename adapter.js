@@ -59,11 +59,11 @@ const mod = {
 
 	_etag: () => new Date().toJSON(),
 
-	put (handle, _url, data, _folders, meta) {
+	put (handle, _url, data, ancestors, meta) {
 		const target = mod.dataPath(handle, _url);
 
 		fs.mkdirSync(path.dirname(target), { recursive: true });
-		_folders.forEach(e => fs.writeFileSync(mod._metaPath(`${ e }/`), JSON.stringify({
+		ancestors.forEach(e => fs.writeFileSync(mod._metaPath(`${ e }/`), JSON.stringify({
 			ETag: mod._etag(),
 		})));
 		
@@ -74,16 +74,16 @@ const mod = {
 		})));
 	},
 
-	delete (target, _folders) {
+	delete (target, ancestors) {
 		fs.unlinkSync(target);
 		fs.unlinkSync(mod._metaPath(target))
 
-		_folders.filter(e => !fs.readdirSync(e).filter(e => !mod._isIgnored(e)).length).forEach(e => {
+		ancestors.filter(e => !fs.readdirSync(e).filter(e => !mod._isIgnored(e)).length).forEach(e => {
 			fs.unlinkSync(mod._metaPath(`${e}/`));
 			fs.rmdirSync(e);
 		});
 
-		_folders.filter(e => fs.existsSync(e) && fs.readdirSync(e).filter(e => !mod._isIgnored(e)).length).forEach(e => fs.writeFileSync(mod._metaPath(`${ e }/`), JSON.stringify({
+		ancestors.filter(e => fs.existsSync(e) && fs.readdirSync(e).filter(e => !mod._isIgnored(e)).length).forEach(e => fs.writeFileSync(mod._metaPath(`${ e }/`), JSON.stringify({
 			ETag: mod._etag(),
 		})));
 	},
