@@ -13,7 +13,7 @@ const mod = {
 				links: [{
 					rel: 'remotestorage',
 					href: `${ req.protocol }://${ req.get('host') }/${ prefix }/me`,
-					type: 'draft-dejong-remotestorage-05',
+					type: 'draft-dejong-remotestorage-06',
 				}],
 			});
 
@@ -43,7 +43,8 @@ const mod = {
 
 		res.set({
 			'Access-Control-Allow-Origin': req.headers['origin'] || '*',
-			'Access-Control-Expose-Headers': 'Content-Length, Content-Type, ETag',	
+			'Access-Control-Expose-Headers': 'Content-Length, Content-Type, ETag',
+			'Cache-control': 'no-cache',
 		});
 
 		if (req.method === 'OPTIONS')
