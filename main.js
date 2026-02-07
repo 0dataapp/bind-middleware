@@ -6,7 +6,6 @@ const mod = {
 
 	_parseToken: e => (!e || !e.trim()) ? null : e.split('Bearer ').pop(),
 
-		// console.info(req.method, req.url);
 	handler: storage => async (req, res, next) => {
 		if (req.url.toLowerCase().match('/.well-known/webfinger'))
 			return res.json({
@@ -20,6 +19,7 @@ const mod = {
 		if (!req.url.startsWith(`/${ prefix }`))
 			return next();
 
+		// console.info(req.method, req.url);
 		const [handle, publicFolder, _url] = req.url.match(new RegExp(`^\\/${ prefix }\\/(\\w+)(\\/public)?(.*)`)).slice(1);
 		const token = mod._parseToken(req.headers.authorization);
 
