@@ -7,12 +7,17 @@ const mod = {
 	_parseToken: e => (!e || !e.trim()) ? null : e.split('Bearer ').pop(),
 
 	handler: storage => async (req, res, next) => {
+		const base = `${ req.protocol }://${ req.get('host') }`;
+		
 		if (req.url.toLowerCase().match('/.well-known/webfinger'))
 			return res.json({
 				links: [{
-					rel: 'remotestorage',
-					href: `${ req.protocol }://${ req.get('host') }/${ prefix }/me`,
-					type: 'draft-dejong-remotestorage-11',
+					rel: 'http://tools.ietf.org/id/draft-dejong-remotestorage',
+					href: `${ base }/${ prefix }/me`,
+					properties: {
+						'http://remotestorage.io/spec/version': 'draft-dejong-remotestorage-11',
+						'http://tools.ietf.org/html/rfc6749#section-4.2': `${ base }/oauth`,
+					},
 				}],
 			});
 
