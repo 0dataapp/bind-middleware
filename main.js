@@ -9,6 +9,12 @@ const mod = {
 	handler: storage => async (req, res, next) => {
 		const base = `${ req.protocol }://${ req.get('host') }`;
 		
+		res.set({
+			'Access-Control-Allow-Origin': req.headers['origin'] || '*',
+			'Access-Control-Expose-Headers': 'Content-Length, Content-Type, ETag',
+			'Cache-control': 'no-cache',
+		});
+
 		if (req.url.toLowerCase().match('/.well-known/webfinger'))
 			return res.json({
 				links: [{
