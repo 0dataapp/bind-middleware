@@ -1,15 +1,12 @@
 {
-  "name": "rs-bind",
+  "name": "remotestorage-middleware",
   "scripts": {
-    "test": "vitest",
     "example": "nodemon --watch main.js --watch adapter.js --watch example.js example.js"
   },
   "devDependencies": {
-    "express": "^5.2.1",
-    "vitest": "^4.0.18"
+    "express": "^5.2.1"
   },
   "dependencies": {
-    "mime": "^4.1.0",
-    "utimes": "^5.2.1"
+    "mime": "^4.1.0"
   }
 }
