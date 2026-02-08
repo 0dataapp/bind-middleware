@@ -4,7 +4,21 @@ const prefix = 'storage';
 
 const mod = {
 
-	_parseToken: e => (!e || !e.trim()) ? null : e.split('Bearer ').pop(),
+	_parseHandle: query => {
+		const { resource } = Object.fromEntries(new URLSearchParams(query));
+
+		if (!resource)
+			return null;
+
+		const account = Object.fromEntries([resource.split(':').slice(0, 2)]).acct;
+
+		if (!account)
+			return null;
+
+		return account.split('@').shift();
+	},
+
+  _parseToken: e => (!e || !e.trim()) ? null : e.split('Bearer ').pop(),
 
   _parseScope: e => e.split(/\s+/).map(e => {
   	const [scope, permission] = e.split(':');
@@ -29,17 +43,23 @@ const mod = {
 				'Access-Control-Allow-Headers': 'Authorization, Content-Length, Content-Type, If-Match, If-None-Match, Origin, X-Requested-With',				
 			}).status(204).end();
 
-		if (req.url.toLowerCase().match('/.well-known/webfinger'))
+		if (req.url.toLowerCase().match('/.well-known/webfinger')) {
+			const handle = mod._parseHandle(req.query);
+
+			if (!handle)
+				return next();
+
 			return res.json({
 				links: [{
 					rel: 'http://tools.ietf.org/id/draft-dejong-remotestorage',
-					href: `${ base }/${ prefix }/me`,
+					href: `${ base }/${ prefix }/${ handle }`,
 					properties: {
 						'http://remotestorage.io/spec/version': 'draft-dejong-remotestorage-11',
 						'http://tools.ietf.org/html/rfc6749#section-4.2': `${ base }/oauth`,
 					},
 				}],
 			});
+		}
 
 		if (!req.url.startsWith(`/${ prefix }`))
 			return next();
