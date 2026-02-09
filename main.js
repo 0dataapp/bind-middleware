@@ -23,6 +23,8 @@ const mod = {
 	options: () => (req, res, next) => {
 		res.set({
 			'Access-Control-Allow-Origin': req.headers['origin'] || '*',
+			'Access-Control-Allow-Headers': 'Authorization, Content-Length, Content-Type, If-Match, If-None-Match, Origin, X-Requested-With',
+			'Access-Control-Allow-Credentials': 'true',
 			'Access-Control-Expose-Headers': 'Content-Length, Content-Type, ETag',
 			'Cache-control': 'no-cache',
 		});
@@ -30,7 +32,6 @@ const mod = {
 		if (req.method === 'OPTIONS')
 			return res.set({
 				'Access-Control-Allow-Methods': 'OPTIONS, GET, HEAD, PUT, DELETE',
-				'Access-Control-Allow-Headers': 'Authorization, Content-Length, Content-Type, If-Match, If-None-Match, Origin, X-Requested-With',				
 			}).status(204).end();
 
 		return next();
