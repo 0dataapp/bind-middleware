@@ -66,7 +66,7 @@ const mod = {
 		const token = mod._parseToken(req.headers.authorization);
 
 		if (!publicFolder && !token)
-			return res.status(401).end();
+			return res.status(401).send('missing token');
 
 		const isFolderRequest = req.url.endsWith('/');
 
@@ -76,15 +76,15 @@ const mod = {
 			return res.status(401).end();
 
 		if (!scope && !publicFolder)
-			return res.status(401).end();
+			return res.status(401).send('missing scope');
 
 		const _scope = _url === '/' ? '*' : _url.match(/^\/([^\/]+)/).pop();
 		
 		if (!publicFolder && scope && !Object.keys(mod._parseScopes(scope)).includes(_scope))
-			return res.status(401).end();
+			return res.status(401).send('invalid scope');
 
 		if (['PUT', 'DELETE'].includes(req.method) && (!scope || !mod._parseScopes(scope)[_scope].includes('w')))
-			return res.status(401).end();
+			return res.status(401).send('invalid access');
 
 		if (req.method === 'PUT' && req.headers['content-range'])
 				return res.status(400).end();
