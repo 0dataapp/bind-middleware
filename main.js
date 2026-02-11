@@ -114,9 +114,8 @@ const mod = {
 		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !fs.existsSync(target))
 			return res.status(404).send('Not found');
 
-		if (req.method === 'GET' && fs.existsSync(target) && req.headers['if-none-match'])
-			if (req.headers['if-none-match'].split(',').map(e => e.trim()).includes(meta.ETag))
-				return res.status(304).end();
+		if (req.method === 'GET' && fs.existsSync(target) && req.headers['if-none-match'] && req.headers['if-none-match'].split(',').map(e => e.trim()).includes(meta.ETag))
+			return res.status(304).end();
 
 		if (req.method === 'PUT')
 			await storage.put(handle, _url, req.body, ancestors, Object.assign(meta, {
