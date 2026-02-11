@@ -134,6 +134,7 @@ const mod = {
 			.status(200);
 
 		if (['HEAD', 'DELETE'].includes(req.method))
+			return res.end();
 
 		return isFolderRequest ? res.json({
 			'@context': 'http://remotestorage.io/spec/folder-description',
