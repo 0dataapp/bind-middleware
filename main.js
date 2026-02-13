@@ -23,7 +23,7 @@ const mod = {
 	cors: () => (req, res, next) => {
 		res.set({
 			'Access-Control-Allow-Origin': req.headers['origin'] || '*',
-			'Access-Control-Allow-Headers': 'Authorization, Content-Length, Content-Type, If-Match, If-None-Match, Origin, X-Requested-With',
+			'Access-Control-Allow-Headers': 'Authorization, Content-Length, Content-Type, If-Match, If-None-Match, Origin, X-Requested-With, Content-Range',
 			'Access-Control-Allow-Credentials': 'true',
 			'Access-Control-Expose-Headers': 'Content-Length, Content-Type, ETag',
 			'Cache-control': 'no-cache',
