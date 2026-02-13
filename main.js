@@ -20,7 +20,7 @@ const mod = {
 
   _parseScopes: e => Object.fromEntries(e.split(/\s+/).map(e => e.split(':'))),
 
-	options: () => (req, res, next) => {
+	cors: () => (req, res, next) => {
 		res.set({
 			'Access-Control-Allow-Origin': req.headers['origin'] || '*',
 			'Access-Control-Allow-Headers': 'Authorization, Content-Length, Content-Type, If-Match, If-None-Match, Origin, X-Requested-With',
