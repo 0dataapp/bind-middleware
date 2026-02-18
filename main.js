@@ -20,6 +20,12 @@ const mod = {
 
   _parseScopes: e => Object.fromEntries(e.split(/\s+/).map(e => e.split(':'))),
 
+  _tidyEtag: e => {
+		const string = e.trim();
+		const quote = '"';
+		return string.startsWith(quote) && string.endsWith(quote) ? string.slice(1, -1) : string;
+	},
+
 	cors: () => (req, res, next) => {
 		res.set({
 			'Access-Control-Allow-Origin': req.headers['origin'] || '*',
@@ -114,7 +120,7 @@ const mod = {
 
 		if (['PUT', 'DELETE'].includes(req.method) && (
 			!fs.existsSync(target) && req.headers['if-match']
-			|| fs.existsSync(target) && req.headers['if-match'] && req.headers['if-match'] !== meta.ETag
+			|| fs.existsSync(target) && req.headers['if-match'] && mod._tidyEtag(req.headers['if-match']) !== meta.ETag
 			|| fs.existsSync(target) && req.headers['if-none-match']
 			))
 			return res.status(412).end();
@@ -122,7 +128,7 @@ const mod = {
 		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !fs.existsSync(target))
 			return res.status(404).send('Not found');
 
-		if (req.method === 'GET' && fs.existsSync(target) && req.headers['if-none-match'] && req.headers['if-none-match'].split(',').map(e => e.trim()).includes(meta.ETag))
+		if (req.method === 'GET' && fs.existsSync(target) && req.headers['if-none-match'] && req.headers['if-none-match'].split(',').map(mod._tidyEtag).includes(meta.ETag))
 			return res.status(304).end();
 
 		if (req.method === 'PUT')
@@ -136,6 +142,8 @@ const mod = {
 
 		if (isFolderRequest)
 			meta['Content-Type'] = 'application/ld+json';
+		
+		meta['ETag'] = `"${ meta['ETag'] }"`;
 		
 		res
 			.set(meta)
