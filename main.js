@@ -37,16 +37,19 @@ const mod = {
 		return next();
 	},
 
-	webfinger: ({ prefix }) => (req, res, next) => {
+	webfinger: ({ prefix, swapHandle }) => async (req, res, next) => {
 		if (!req.url.toLowerCase().match('/.well-known/webfinger'))
 			return next();
 
 		const base = `${ req.protocol }://${ req.get('host') }`;
 		
-		const handle = mod._parseHandle(req.query);
+		let handle = mod._parseHandle(req.query);
 
 		if (!handle)
 			return next();
+
+		if (swapHandle)
+			handle = await swapHandle(handle);
 
 		return res.json({
 			links: [{
