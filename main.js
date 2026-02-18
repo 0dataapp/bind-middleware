@@ -150,7 +150,7 @@ const mod = {
 			.status(200);
 
 		if (['HEAD', 'DELETE'].includes(req.method))
-			return res.end();
+			return req.headers['user-agent'].match(/firefox/i) && req.method === 'DELETE' ? res.send('') : res.end(); // Firefox fails the request unless there's a body.
 
 		return isFolderRequest ? res.json({
 			'@context': 'http://remotestorage.io/spec/folder-description',
