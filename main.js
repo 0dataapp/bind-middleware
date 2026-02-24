@@ -43,7 +43,7 @@ const mod = {
 		return next();
 	},
 
-	webfinger: ({ prefix, swapHandle }) => async (req, res, next) => {
+	webfinger: ({ storagePath, authPath }) => async (req, res, next) => {
 		if (!req.url.toLowerCase().match('/.well-known/webfinger'))
 			return next();
 
@@ -54,16 +54,13 @@ const mod = {
 		if (!handle)
 			return next();
 
-		if (swapHandle)
-			handle = await swapHandle(handle);
-
 		return res.json({
 			links: [{
 				rel: 'http://tools.ietf.org/id/draft-dejong-remotestorage',
-				href: `${ base }/${ prefix }/${ handle }`,
+				href: `${ base }${ await storagePath(handle) }`,
 				properties: {
 					'http://remotestorage.io/spec/version': 'draft-dejong-remotestorage-11',
-					'http://tools.ietf.org/html/rfc6749#section-4.2': `${ base }/oauth`,
+					'http://tools.ietf.org/html/rfc6749#section-4.2': `${ base }${ authPath }`,
 				},
 			}],
 		});
