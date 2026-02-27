@@ -123,7 +123,7 @@ const mod = {
 			))
 			return res.status(412).end();
 
-		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !targetExists && !isFolderRequest)
+		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !targetExists)
 			return res.status(404).send('Not found');
 
 		if (req.method === 'GET' && targetExists && req.headers['if-none-match'] && req.headers['if-none-match'].split(',').map(mod._tidyEtag).includes(meta.ETag))
@@ -152,7 +152,7 @@ const mod = {
 
 		return isFolderRequest ? res.json({
 			'@context': 'http://remotestorage.io/spec/folder-description',
-			items: !targetExists ? {} : await storage.folderItems(handle, __url),
+			items: await storage.folderItems(handle, __url),
 		}) : res.send(fs.readFileSync(target, meta['Content-Type'].startsWith('application/json') ? 'utf8' : undefined));
 	},
 
