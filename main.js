@@ -122,7 +122,7 @@ const mod = {
 			))
 			return res.status(412).end();
 
-		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !fs.existsSync(target))
+		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !fs.existsSync(target) && !isFolderRequest)
 			return res.status(404).send('Not found');
 
 		if (req.method === 'GET' && fs.existsSync(target) && req.headers['if-none-match'] && req.headers['if-none-match'].split(',').map(mod._tidyEtag).includes(meta.ETag))
