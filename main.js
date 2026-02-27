@@ -101,31 +101,32 @@ const mod = {
 
 		const __url = `${ publicFolder ? '/public' : ''}${ _url }`;
 		const target = storage.dataPath(handle, __url);
+		const targetExists = fs.existsSync(target);
 		
-		if (req.method === 'PUT' && fs.existsSync(target) && fs.statSync(target).isDirectory())
+		if (req.method === 'PUT' && targetExists && fs.statSync(target).isDirectory())
 			return res.status(409).end();
 
 		const ancestors = __url.split('/').slice(0, -1).reduce((coll, item) => {
 			return coll.concat(`${ coll.at(-1) || '' }/${ item }`);
 		}, []).map(e => storage.dataPath(handle, e));
 		
-		if (req.method === 'PUT' && !fs.existsSync(target))
+		if (req.method === 'PUT' && !targetExists)
 			if (ancestors.filter(e => fs.existsSync(e) && fs.statSync(e).isFile()).length)
 				return res.status(409).end();
 
 		const meta = await storage.meta(handle, __url);
 
 		if (['PUT', 'DELETE'].includes(req.method) && (
-			!fs.existsSync(target) && req.headers['if-match']
-			|| fs.existsSync(target) && req.headers['if-match'] && mod._tidyEtag(req.headers['if-match']) !== meta.ETag
-			|| fs.existsSync(target) && req.headers['if-none-match']
+			!targetExists && req.headers['if-match']
+			|| targetExists && req.headers['if-match'] && mod._tidyEtag(req.headers['if-match']) !== meta.ETag
+			|| targetExists && req.headers['if-none-match']
 			))
 			return res.status(412).end();
 
-		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !fs.existsSync(target) && !isFolderRequest)
+		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !targetExists && !isFolderRequest)
 			return res.status(404).send('Not found');
 
-		if (req.method === 'GET' && fs.existsSync(target) && req.headers['if-none-match'] && req.headers['if-none-match'].split(',').map(mod._tidyEtag).includes(meta.ETag))
+		if (req.method === 'GET' && targetExists && req.headers['if-none-match'] && req.headers['if-none-match'].split(',').map(mod._tidyEtag).includes(meta.ETag))
 			return res.status(304).end();
 
 		if (req.method === 'PUT')
