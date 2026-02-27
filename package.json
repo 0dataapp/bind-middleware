@@ -1,5 +1,5 @@
 {
-  "name": "remotestorage-middleware",
+  "name": "bind-middleware",
   "main": "main.js",
   "scripts": {
     "example": "nodemon --watch main.js --watch adapter.js --watch example.js example.js"
