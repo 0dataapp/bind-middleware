@@ -6,8 +6,5 @@
   },
   "devDependencies": {
     "express": "^5.2.1"
-  },
-  "dependencies": {
-    "mime": "^4.1.0"
   }
 }
