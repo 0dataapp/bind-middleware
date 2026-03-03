@@ -16,11 +16,11 @@ const mod = {
 		return account.split('@').shift();
 	},
 
-  _parseToken: e => (!e || !e.trim()) ? null : e.split('Bearer ').pop(),
+	_parseToken: e => (!e || !e.trim()) ? null : e.split('Bearer ').pop(),
 
-  _parseScopes: e => Object.fromEntries(e.split(/\s+/).map(e => e.split(':'))),
+	_parseScopes: e => Object.fromEntries(e.split(/\s+/).map(e => e.split(':'))),
 
-  _tidyEtag: e => {
+	_tidyEtag: e => {
 		const string = e.trim();
 		const quote = '"';
 		return string.startsWith(quote) && string.endsWith(quote) ? string.slice(1, -1) : string;
@@ -68,7 +68,7 @@ const mod = {
 
 	storage: ({ storage, getScope }) => async (req, res, next) => {
 		// console.info(req.method, req.url);
-		const [handle, publicFolder, _url] = req.url.match(new RegExp(`^\\/(\\w+)(\\/public)?(.*)`)).slice(1);
+		const [handle, publicFolder, _url] = req.url.match(new RegExp('^\\/(\\w+)(\\/public)?(.*)')).slice(1);
 		const token = mod._parseToken(req.headers.authorization);
 
 		if (!publicFolder && !token)
@@ -97,7 +97,7 @@ const mod = {
 			return res.status(401).send('invalid access');
 
 		if (req.method === 'PUT' && req.headers['content-range'])
-				return res.status(400).end();
+			return res.status(400).end();
 
 		const __url = `${ publicFolder ? '/public' : ''}${ _url }`;
 		const target = storage.dataPath(handle, __url);
@@ -114,40 +114,40 @@ const mod = {
 			if (ancestors.filter(e => fs.existsSync(e) && fs.statSync(e).isFile()).length)
 				return res.status(409).end();
 
-		const meta = await storage.meta(handle, __url);
+			const meta = await storage.meta(handle, __url);
 
-		if (['PUT', 'DELETE'].includes(req.method) && (
-			!targetExists && req.headers['if-match']
-			|| targetExists && req.headers['if-match'] && mod._tidyEtag(req.headers['if-match']) !== meta.ETag
-			|| targetExists && req.headers['if-none-match']
-			))
-			return res.status(412).end();
+			if (['PUT', 'DELETE'].includes(req.method) && (
+				!targetExists && req.headers['if-match']
+				|| targetExists && req.headers['if-match'] && mod._tidyEtag(req.headers['if-match']) !== meta.ETag
+				|| targetExists && req.headers['if-none-match']
+				))
+				return res.status(412).end();
 
-		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !targetExists)
-			return res.status(404).send('Not found');
+			if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !targetExists)
+				return res.status(404).send('Not found');
 
-		if (req.method === 'GET' && targetExists && req.headers['if-none-match'] && req.headers['if-none-match'].split(',').map(mod._tidyEtag).includes(meta.ETag))
-			return res.status(304).end();
+			if (req.method === 'GET' && targetExists && req.headers['if-none-match'] && req.headers['if-none-match'].split(',').map(mod._tidyEtag).includes(meta.ETag))
+				return res.status(304).end();
 
-		if (req.method === 'PUT')
-			await storage.put(handle, __url, req.body, ancestors, Object.assign(meta, {
-				'Content-Type': req.headers['content-type'],
-				'Last-Modified': new Date().toUTCString(),
-			}));
+			if (req.method === 'PUT')
+				await storage.put(handle, __url, req.body, ancestors, Object.assign(meta, {
+					'Content-Type': req.headers['content-type'],
+					'Last-Modified': new Date().toUTCString(),
+				}));
 
-		if (req.method === 'DELETE')
-			await storage.delete(target, ancestors);
+			if (req.method === 'DELETE')
+				await storage.delete(target, ancestors);
 
-		if (isFolderRequest)
-			meta['Content-Type'] = 'application/ld+json';
-		
-		meta['ETag'] = `"${ meta['ETag'] }"`;
-		
-		res
+			if (isFolderRequest)
+				meta['Content-Type'] = 'application/ld+json';
+			
+			meta['ETag'] = `"${ meta['ETag'] }"`;
+			
+			res
 			.set(meta)
 			.status(200);
 
-		if (['HEAD', 'DELETE'].includes(req.method))
+			if (['HEAD', 'DELETE'].includes(req.method))
 			return req.headers['user-agent'].match(/firefox/i) && req.method === 'DELETE' ? res.send('') : res.end(); // Firefox fails the request unless there's a body.
 
 		return isFolderRequest ? res.json({
@@ -157,58 +157,58 @@ const mod = {
 	},
 
 	sveltekit: (middleware, path) => async ({ event, resolve }) => {
-	  if (path && !event.url.pathname.startsWith(path))
-	    return resolve(event);
+		if (path && !event.url.pathname.startsWith(path))
+			return resolve(event);
 
-	  const [protocol, host] = [event.url.protocol.replace(/\:$/, ''), event.url.host];
-	  const req = {
-	    url: `${ event.url.pathname }${ event.url.search }`,
-	    protocol,
-	    query: event.url.search,
-	    method: event.request.method,
-	    headers: Object.fromEntries(event.request.headers),
-	    get: key => ({
-	    	host,
-	    }[key]),
-	  };
+		const [protocol, host] = [event.url.protocol.replace(/\:$/, ''), event.url.host];
+		const req = {
+			url: `${ event.url.pathname }${ event.url.search }`,
+			protocol,
+			query: event.url.search,
+			method: event.request.method,
+			headers: Object.fromEntries(event.request.headers),
+			get: key => ({
+				host,
+			}[key]),
+		};
 
-	  if (path)
-	  	req.url = req.url.replace(new RegExp(`^${ path.replaceAll('/', '\\/') }`), '');
+		if (path)
+			req.url = req.url.replace(new RegExp(`^${ path.replaceAll('/', '\\/') }`), '');
 
-	  if (req.method === 'PUT' && !event.request.__body)
-	    event.request.__body = await (function () {
-	      if (event.request.headers.get('content-type').startsWith('application/json'))
-	        return event.request.json();
+		if (req.method === 'PUT' && !event.request.__body)
+			event.request.__body = await (function () {
+				if (event.request.headers.get('content-type').startsWith('application/json'))
+					return event.request.json();
 
-	      if (event.request.headers.get('content-type').startsWith('text/'))
-	        return event.request.text();
-	      
-	      return event.request.arrayBuffer();
-	    })();
+				if (event.request.headers.get('content-type').startsWith('text/'))
+					return event.request.text();
+				
+				return event.request.arrayBuffer();
+			})();
 
-	  if (req.method === 'PUT')
-	    req.body = event.request.__body;
+		if (req.method === 'PUT')
+			req.body = event.request.__body;
 
-	  event.__headers = event.__headers || {};
+		event.__headers = event.__headers || {};
 
-	  const res = {
-	  	set: obj => (Object.keys(obj).forEach(key => event.__headers[key] = obj[key]), res),
+		const res = {
+			set: obj => (Object.keys(obj).forEach(key => event.__headers[key] = obj[key]), res),
 
-	    status: code => (res._status = code, res),
-	    json: obj => res.send(JSON.stringify(obj)),
-	    send: body => (res.body = body, res.end()),
-	    end: () => new Response(res.body, {
-	      status: res._status || 200,
-	      headers: event.__headers,
-	    }),
-	  };
+			status: code => (res._status = code, res),
+			json: obj => res.send(JSON.stringify(obj)),
+			send: body => (res.body = body, res.end()),
+			end: () => new Response(res.body, {
+				status: res._status || 200,
+				headers: event.__headers,
+			}),
+		};
 
-	  return middleware(req, res, err => {
-	  	if (err)
-	  		throw err;
+		return middleware(req, res, err => {
+			if (err)
+				throw err;
 
-	  	return resolve(event);
-	  });
+			return resolve(event);
+		});
 	},
 
 };
