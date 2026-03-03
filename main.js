@@ -66,7 +66,7 @@ const mod = {
 		});
 	},
 
-	storage: ({ storage, getScope }) => async (req, res, next) => {
+	storage: ({ hold, getScope }) => async (req, res, next) => {
 		// console.info(req.method, req.url);
 		const [handle, publicFolder, _url] = req.url.match(new RegExp('^\\/(\\w+)(\\/public)?(.*)')).slice(1);
 		const token = mod._parseToken(req.headers.authorization);
@@ -100,7 +100,7 @@ const mod = {
 			return res.status(400).end();
 
 		const __url = `${ publicFolder ? '/public' : ''}${ _url }`;
-		const target = storage.dataPath(handle, __url);
+		const target = hold.dataPath(handle, __url);
 		const targetExists = fs.existsSync(target);
 		
 		if (req.method === 'PUT' && targetExists && fs.statSync(target).isDirectory())
@@ -108,13 +108,13 @@ const mod = {
 
 		const ancestors = __url.split('/').slice(0, -1).reduce((coll, item) => {
 			return coll.concat(`${ coll.at(-1) || '' }/${ item }`);
-		}, []).map(e => storage.dataPath(handle, e));
+		}, []).map(e => hold.dataPath(handle, e));
 		
 		if (req.method === 'PUT' && !targetExists)
 			if (ancestors.filter(e => fs.existsSync(e) && fs.statSync(e).isFile()).length)
 				return res.status(409).end();
 
-			const meta = await storage.meta(handle, __url);
+			const meta = await hold.meta(handle, __url);
 
 			if (['PUT', 'DELETE'].includes(req.method) && (
 				!targetExists && req.headers['if-match']
@@ -130,13 +130,13 @@ const mod = {
 				return res.status(304).end();
 
 			if (req.method === 'PUT')
-				await storage.put(handle, __url, req.body, ancestors, Object.assign(meta, {
+				await hold.put(handle, __url, req.body, ancestors, Object.assign(meta, {
 					'Content-Type': req.headers['content-type'],
 					'Last-Modified': new Date().toUTCString(),
 				}));
 
 			if (req.method === 'DELETE')
-				await storage.delete(target, ancestors);
+				await hold.delete(target, ancestors);
 
 			if (isFolderRequest)
 				meta['Content-Type'] = 'application/ld+json';
@@ -152,7 +152,7 @@ const mod = {
 
 		return isFolderRequest ? res.json({
 			'@context': 'http://remotestorage.io/spec/folder-description',
-			items: await storage.folderItems(handle, __url),
+			items: await hold.folderItems(handle, __url),
 		}) : res.send(fs.readFileSync(target, meta['Content-Type'].startsWith('application/json') ? 'utf8' : undefined));
 	},
 
