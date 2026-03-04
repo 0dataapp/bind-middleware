@@ -136,10 +136,16 @@ const mod = {
 			return res.status(304).end();
 
 		if (req.method === 'PUT')
-			await hold.put(handle, __url, req.body, ancestors, Object.assign(meta, {
-				'Content-Type': req.headers['content-type'],
-				'Last-Modified': new Date().toUTCString(),
-			}));
+			await hold.put({
+				handle,
+				_url: __url,
+				data: req.body,
+				ancestors,
+				meta: Object.assign(meta, {
+					'Content-Type': req.headers['content-type'],
+					'Last-Modified': new Date().toUTCString(),
+				}),
+			});
 
 		if (req.method === 'DELETE')
 			await hold.delete(target, ancestors);
