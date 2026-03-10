@@ -130,7 +130,10 @@ const mod = {
 			return res.status(412).end();
 
 		if (['HEAD', 'GET', 'DELETE'].includes(req.method) && !targetExists)
-			return res.status(404).send('Not found');
+			return isFolderRequest ? res.status(200).json({
+			'@context': 'http://remotestorage.io/spec/folder-description',
+				items: {},
+			}) : res.status(404).send('Not found');
 
 		if (req.method === 'GET' && targetExists && req.headers['if-none-match'] && req.headers['if-none-match'].split(',').map(mod.util.tidyEtag).includes(meta.ETag))
 			return res.status(304).end();
