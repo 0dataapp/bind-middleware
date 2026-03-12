@@ -74,29 +74,29 @@ const mod = {
 
 	storage: ({ hold, getScope }) => async (req, res, next) => {
 		// console.info(req.method, req.url);
-		const [handle, publicFolder, path] = mod.util.parsePathname(req.url);
+		const [handle, isPublicFolder, path] = mod.util.parsePathname(req.url);
 		const token = mod.util.parseToken(req.headers.authorization);
 
-		if (!publicFolder && !token)
+		if (!isPublicFolder && !token)
 			return res.status(401).send('missing token');
 
 		const isFolderRequest = req.url.endsWith('/');
 
 		const scope = await getScope(handle, token);
 
-		if (!scope && publicFolder && isFolderRequest)
+		if (!scope && isPublicFolder && isFolderRequest)
 			return res.status(401).end();
 
-		if (!scope && !publicFolder)
+		if (!scope && !isPublicFolder)
 			return res.status(401).send('missing scope');
 
 		const _scope = path === '/' ? '/' : path.match(/^\/([^\/]+)/).pop();
 
 		const scopes = !scope ? {
-			// if publicFolder, we may not have a token
+			// if isPublicFolder, we may not have a token
 		} : mod.util.parseScopes(scope);
 
-		if (!publicFolder && scope && !Object.keys(scopes).includes(_scope) && !Object.keys(scopes).includes('*'))
+		if (!isPublicFolder && scope && !Object.keys(scopes).includes(_scope) && !Object.keys(scopes).includes('*'))
 			return res.status(401).send('invalid scope');
 
 		if (['PUT', 'DELETE'].includes(req.method) && (!scope || !(scopes[_scope] || scopes['*']).includes('w')))
@@ -105,7 +105,7 @@ const mod = {
 		if (req.method === 'PUT' && req.headers['content-range'])
 			return res.status(400).end();
 
-		const __url = `${ publicFolder ? '/public' : ''}${ path }`;
+		const __url = `${ isPublicFolder ? '/public' : ''}${ path }`;
 		const target = hold.dataPath(handle, __url);
 		const targetExists = fs.existsSync(target);
 		
