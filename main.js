@@ -168,10 +168,13 @@ const mod = {
 		if (['HEAD', 'DELETE'].includes(req.method))
 			return req.headers['user-agent'].match(/firefox/i) && req.method === 'DELETE' ? res.send('') : res.end(); // Firefox fails the request unless there's a body.
 
-		return isFolderRequest ? res.json({
-			'@context': 'http://remotestorage.io/spec/folder-description',
-			items: await hold.folderItems(handle, __url),
-		}) : res.send(fs.readFileSync(target, meta['Content-Type'].startsWith('application/json') ? 'utf8' : undefined));
+		if (isFolderRequest)
+			return res.json({
+				'@context': 'http://remotestorage.io/spec/folder-description',
+				items: await hold.folderItems(handle, __url),
+			});
+
+		return res.send(fs.readFileSync(target, meta['Content-Type'].startsWith('application/json') ? 'utf8' : undefined));
 	},
 
 	sveltekit: (middleware, path) => async ({ event, resolve }) => {
