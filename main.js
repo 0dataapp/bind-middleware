@@ -74,7 +74,7 @@ const mod = {
 
 	storage: ({ hold, getScope }) => async (req, res, next) => {
 		// console.info(req.method, req.url);
-		const [handle, publicFolder, _url] = mod.util.parsePathname(req.url);
+		const [handle, publicFolder, path] = mod.util.parsePathname(req.url);
 		const token = mod.util.parseToken(req.headers.authorization);
 
 		if (!publicFolder && !token)
@@ -90,7 +90,7 @@ const mod = {
 		if (!scope && !publicFolder)
 			return res.status(401).send('missing scope');
 
-		const _scope = _url === '/' ? '/' : _url.match(/^\/([^\/]+)/).pop();
+		const _scope = path === '/' ? '/' : path.match(/^\/([^\/]+)/).pop();
 
 		const scopes = !scope ? {
 			// if publicFolder, we may not have a token
@@ -105,7 +105,7 @@ const mod = {
 		if (req.method === 'PUT' && req.headers['content-range'])
 			return res.status(400).end();
 
-		const __url = `${ publicFolder ? '/public' : ''}${ _url }`;
+		const __url = `${ publicFolder ? '/public' : ''}${ path }`;
 		const target = hold.dataPath(handle, __url);
 		const targetExists = fs.existsSync(target);
 		
@@ -141,7 +141,7 @@ const mod = {
 		if (req.method === 'PUT')
 			await hold.put({
 				handle,
-				_url: __url,
+				path: __url,
 				data: req.body,
 				ancestors,
 				meta: Object.assign(meta, {
