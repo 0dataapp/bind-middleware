@@ -2,87 +2,130 @@ import fs from 'fs';
 import path from 'path';
 
 import { fileURLToPath } from 'url';
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const folder = path.join(__dirname, '__storage');
 
 const metaSuffix = '.meta.json';
 
 const mod = {
 
-	_resolvePath: (handle, url) => path.join(__dirname, '__storage', handle, url),
+	util: {
 
-	_readJson (path) {
-    try {
-      const content = fs.readFileSync(path);
-      return content ? JSON.parse(content) : null;
-    } catch (e) {
-      if (e.code !== 'ENOENT')
-      	console.error('reading JSON failed:', e);
+		isJunk: e => [
+			'.DS_Store',
+		].includes(path.basename(e)),
+		encoding: contentType => [
+			'application/json',
+			'text',
+		].filter(e => contentType.startsWith(e)).length ? 'utf8' : undefined,
+		isIgnored: e => mod.util.isJunk(e) || e.endsWith(metaSuffix),
+		localPath: ({ handle, target }) => path.join(folder, handle, target),
 
-      return null;
-    }
-  },
-
-  dataPath: (handle, url) => mod._resolvePath(handle, path.join('data', url)),
+	},
 
 	_metaPath: target => `${ target }${ metaSuffix }`,
-	_isIgnored: e => e.endsWith(metaSuffix) || [
-		'.DS_Store',
-	].includes(path.basename(e)),
-
-	meta (handle, _url) {
-		const target = mod.dataPath(handle, _url);
-		return fs.existsSync(target) ? JSON.parse(fs.readFileSync(mod._metaPath(target), 'utf8')) : {}
-	},
-
-	_etag: () => `"${ new Date().toJSON() }"`,
-
-	put (handle, _url, data, ancestors, meta) {
-		const target = mod.dataPath(handle, _url);
-
-		fs.mkdirSync(path.dirname(target), { recursive: true });
-		ancestors.forEach(e => fs.writeFileSync(mod._metaPath(`${ e }/`), JSON.stringify({
-			ETag: mod._etag(),
-		})));
-		
-		fs.writeFileSync(target, meta['Content-Type'].startsWith('application/json') ? JSON.stringify(data) : data);
-		fs.writeFileSync(mod._metaPath(target), JSON.stringify(Object.assign(meta, {
-			ETag: mod._etag(),
-			'Content-Length': Buffer.isBuffer(data) ? data.length : fs.statSync(target).size,
-		})));
-	},
-
-	delete (target, ancestors) {
-		fs.unlinkSync(target);
-		fs.unlinkSync(mod._metaPath(target))
-
-		ancestors.filter(e => !fs.readdirSync(e).filter(e => !mod._isIgnored(e)).length).forEach(e => {
-			fs.unlinkSync(mod._metaPath(`${e}/`));
-			fs.rmdirSync(e);
+	_etag: () => (new Date()).toJSON(),
+	
+	put ({ handle, target: _path, data, breadcrumbs, meta }) {
+		const target = mod.util.localPath({
+			handle,
+			target: _path,
 		});
 
-		ancestors.filter(e => fs.existsSync(e) && fs.readdirSync(e).filter(e => !mod._isIgnored(e)).length).forEach(e => fs.writeFileSync(mod._metaPath(`${ e }/`), JSON.stringify({
-			ETag: mod._etag(),
+		fs.mkdirSync(path.dirname(target), { recursive: true });
+		breadcrumbs.forEach(e => {
+			e = mod.util.localPath({
+				handle,
+				target: e,
+			}) + '/';
+
+			const stat = fs.statSync(e);
+			fs.writeFileSync(this._metaPath(e), JSON.stringify({
+				ETag: stat.mtime.toJSON(),
+			}));
+		});
+		
+		fs.writeFileSync(target, meta['Content-Type'].startsWith('application/json') ? JSON.stringify(data) : Buffer.from(data));
+
+		const stat = fs.statSync(target);
+		fs.writeFileSync(this._metaPath(target), JSON.stringify(Object.assign(meta, {
+			ETag: stat.mtime.toJSON(),
+			'Content-Length': Buffer.isBuffer(data) ? data.length : stat.size,
+			'Last-Modified': stat.mtime.toUTCString(),
 		})));
 	},
 
-	folderItems (handle, _url) {
-		const target = mod.dataPath(handle, _url);
+	delete ({ handle, target: _path, breadcrumbs }) {
+		const target = mod.util.localPath({
+			handle,
+			target: _path,
+		});
+		fs.unlinkSync(target);
+		fs.unlinkSync(this._metaPath(target));
 
-		return fs.readdirSync(target).filter(e => !mod._isIgnored(e)).reduce((coll, item) => {
-			let _path = path.join(target, item);
+		breadcrumbs.slice().sort().reverse().forEach(e => {
+			e = mod.util.localPath({
+				handle,
+				target: e,
+			});
 
-			if (fs.statSync(_path).isDirectory()) {
-				item = `${ item }/`;
-				_path = `${ _path }/`;
+			if (fs.readdirSync(e).filter(e => !mod.util.isIgnored(e)).length)
+				return;
+
+			fs.rmSync(e, { recursive: true, force: true })
+		});
+
+		breadcrumbs.map(e => mod.util.localPath({
+			handle,
+			target: e,
+		})).filter(e => fs.existsSync(e) && fs.readdirSync(e).filter(e => !mod.util.isIgnored(e)).length).forEach(e => fs.writeFileSync(this._metaPath(`${ e }/`), JSON.stringify({
+			ETag: this._etag(),
+		})));
+	},
+
+	list ({ handle, target: _path }) {
+		const target = mod.util.localPath({
+			handle,
+			target: _path,
+		});
+
+		return fs.readdirSync(target).filter(e => !mod.util.isIgnored(e)).reduce((coll, item) => {
+			let e = path.join(target, item);
+
+			if (fs.statSync(e).isDirectory()) {
+				item += '/';
+				e += '/';
 			}
 
 			return Object.assign(coll, {
-				[item]: JSON.parse(fs.readFileSync(mod._metaPath(_path), 'utf8')),
+				[item]: JSON.parse(fs.readFileSync(this._metaPath(e), 'utf8')),
 			});
-		}, {})
+		}, {});
 	},
 
+	exists (params) {
+		return fs.existsSync(mod.util.localPath(params));
+	},
+
+	isFolder (params) {
+		return fs.statSync(mod.util.localPath(params)).isDirectory();
+	},
+
+	get (params) {
+		return fs.readFileSync(mod.util.localPath(params), mod.util.encoding(params.contentType));
+	},
+
+	meta (params) {
+		const target = mod.util.localPath(params);
+
+		if (!fs.existsSync(target) || !fs.existsSync(this._metaPath(target)))
+			return {
+				ETag: 'empty',
+			};
+
+		return JSON.parse(fs.readFileSync(this._metaPath(target), 'utf8'));
+	},
+	
 };
 
 export default mod;

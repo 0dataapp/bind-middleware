@@ -1,10 +1,12 @@
 {
   "name": "bind-glue",
   "main": "main.js",
+  "type": "module",
   "scripts": {
-    "example": "nodemon --watch main.js --watch adapter.js --watch example.js example.js"
+    "start": "nodemon --watch main.js --watch adapter.js --watch example.js --watch .env-sample example.js"
   },
   "devDependencies": {
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "dotenv": "^17.3.1"
   }
 }
